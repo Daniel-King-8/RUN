@@ -5,13 +5,15 @@ services:
     container_name: unirun-web
     init: true
     restart: unless-stopped
-    # 默认只绑定本机回环地址。不要改成 0.0.0.0 后直接暴露到公网。
+    # 局域网直连：绑定所有网卡的 8000 端口。
+    # 不要把该端口直接映射到公网；公网请改回 127.0.0.1 并套 HTTPS 反向代理。
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     environment:
       SESSION_IDLE_TTL: "900"
       SESSION_MAX_TTL: "7200"
       COOKIE_SECURE: "0"
+      # 建议设置访问口令；留空表示局域网内任何人都能打开登录页
       ACCESS_CODE: ""
       LOGIN_MAX_ATTEMPTS: "10"
       LOGIN_WINDOW_SECONDS: "300"
