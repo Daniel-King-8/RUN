@@ -19,6 +19,7 @@
   const runForm = $("runForm");
   const runBtn = $("runBtn");
   const paceHint = $("paceHint");
+  const mapHint = $("mapHint");
 
   async function api(path, options = {}) {
     const response = await fetch(path, {
@@ -79,9 +80,43 @@
     $("password").value = "";
     $("accessCode").value = "";
     loginError.textContent = "";
+    mapHint.textContent = "";
+    mapHint.classList.remove("warn");
   }
 
-  function showApp(profile) {
+  function setMapOptions(maps, defaultKey) {
+    const select = $("mapSelect");
+    select.textContent = "";
+    for (const item of maps || []) {
+      const option = document.createElement("option");
+      option.value = item.key;
+      option.textContent = item.name;
+      select.appendChild(option);
+    }
+    if (defaultKey) {
+      select.value = defaultKey;
+    }
+  }
+
+  function updateMapHint(info) {
+    if (!info || !info.maps) {
+      mapHint.textContent = "";
+      return;
+    }
+    const count = info.maps.length;
+    if (!info.map_matched) {
+      mapHint.textContent = "未匹配到账号所属校区，已显示全部地图，请手动选择";
+      mapHint.classList.add("warn");
+    } else if (count > 1) {
+      mapHint.textContent = `已按账号匹配到 ${count} 个校区，请确认`;
+      mapHint.classList.remove("warn");
+    } else {
+      mapHint.textContent = "已根据账号自动选择校区";
+      mapHint.classList.remove("warn");
+    }
+  }
+
+  function showApp(profile, mapInfo) {
     state.profile = profile;
     loginCard.hidden = true;
     appCard.hidden = false;
@@ -92,6 +127,11 @@
     $("studentName").textContent = name;
     $("schoolName").textContent = profile.schoolName || "—";
     $("avatar").textContent = name.slice(0, 1);
+
+    if (mapInfo && mapInfo.maps) {
+      setMapOptions(mapInfo.maps, mapInfo.default_map);
+      updateMapHint(mapInfo);
+    }
     updatePaceHint();
   }
 
@@ -125,14 +165,7 @@
     time.max = config.time.max;
     time.value = config.time.default;
 
-    const select = $("mapSelect");
-    select.textContent = "";
-    for (const item of config.maps) {
-      const option = document.createElement("option");
-      option.value = item.key;
-      option.textContent = item.name;
-      select.appendChild(option);
-    }
+    setMapOptions(config.maps, null);
 
     $("accessCodeRow").hidden = !config.access_code_required;
   }
@@ -159,10 +192,11 @@
           phone,
           password,
           access_code: $("accessCode").value || null,
+          disclaimer_accepted: true,
         }),
       });
       clearBanner();
-      showApp(data.profile);
+      showApp(data.profile, data);
     } catch (error) {
       loginError.textContent = error.message;
     } finally {
@@ -250,7 +284,7 @@
   $("distance").addEventListener("input", updatePaceHint);
   $("time").addEventListener("input", updatePaceHint);
 
-  (async function init() {
+  async function init() {
     try {
       const config = await api("/api/config");
       applyConfig(config);
@@ -261,9 +295,52 @@
 
     try {
       const me = await api("/api/me");
-      showApp(me.profile);
+      showApp(me.profile, me);
     } catch (_) {
       showLogin();
     }
-  })();
+  }
+
+  const overlay = $("disclaimerOverlay");
+  const closedScreen = $("closedScreen");
+  const acceptBtn = $("disclaimerAccept");
+  const declineBtn = $("disclaimerDecline");
+  let started = false;
+
+  function startApp() {
+    if (started) return;
+    started = true;
+    init();
+  }
+
+  acceptBtn.addEventListener("click", () => {
+    overlay.hidden = true;
+    document.body.classList.remove("modal-open");
+    startApp();
+    $("phone").focus();
+  });
+
+  declineBtn.addEventListener("click", () => {
+    overlay.hidden = true;
+    document.body.classList.remove("modal-open");
+    document.querySelector(".page").hidden = true;
+    closedScreen.hidden = false;
+
+    // 浏览器通常禁止脚本关闭非脚本打开的标签页；
+    // 关闭失败时停留在“已停止使用”页面。
+    window.close();
+  });
+
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    if (event.shiftKey && document.activeElement === declineBtn) {
+      event.preventDefault();
+      acceptBtn.focus();
+    } else if (!event.shiftKey && document.activeElement === acceptBtn) {
+      event.preventDefault();
+      declineBtn.focus();
+    }
+  });
+
+  acceptBtn.focus();
 })();

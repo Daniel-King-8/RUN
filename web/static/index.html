@@ -7,7 +7,33 @@
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2322d3ee'/%3E%3Cpath d='M20 44l8-22h8l-8 22zm14 0l5-14h8l-5 14z' fill='%2307121f'/%3E%3C/svg%3E">
 </head>
-<body>
+<body class="modal-open">
+  <div id="disclaimerOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
+    <div class="modal">
+      <h2 id="disclaimerTitle">免责声明</h2>
+      <p class="modal-lead">在使用本服务前，请完整阅读并确认以下内容：</p>
+      <div class="modal-body">
+        <ol class="modal-list">
+          <li>本工具仅供学习交流与个人使用，不得用于商业用途、代跑服务或任何违反学校及平台规定的行为。</li>
+          <li>使用本工具可能导致账号异常、跑步记录无效、成绩取消、学校纪律处分或平台封禁，相关后果由使用者自行承担。</li>
+          <li>登录时账号密码会提交到本服务所在服务器，仅用于本次登录；服务端不写入磁盘，提交结束即销毁会话。请仅在可信环境中使用。</li>
+          <li>本工具与相关学校、平台无任何关联，未获其授权；使用者应自行确认并遵守其服务条款。</li>
+          <li>软件按“现状”提供，不保证可用性、不被检测或结果有效；开发者不承担由此产生的任何责任。</li>
+        </ol>
+        <p class="modal-note">点击“同意并继续”表示你已阅读、理解并接受上述内容；不同意请关闭页面。</p>
+      </div>
+      <div class="modal-actions">
+        <button id="disclaimerDecline" class="ghost" type="button">不同意并关闭</button>
+        <button id="disclaimerAccept" class="primary" type="button">同意并继续</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="closedScreen" class="closed-screen" hidden>
+    <h1>已停止使用</h1>
+    <p>你未同意免责声明，本页面已停止服务。请直接关闭此标签页。</p>
+  </div>
+
   <main class="page">
     <header class="hero">
       <div class="mark" aria-hidden="true">
@@ -69,6 +95,8 @@
           <select id="mapSelect"></select>
         </label>
 
+        <p id="mapHint" class="hint"></p>
+
         <div class="grid2">
           <label class="field">
             <span>里程（米）</span>
@@ -90,8 +118,9 @@
       </p>
     </section>
 
-    <p class="footer-note">
-      仅限可信的私有环境使用。请勿将本服务直接暴露到公网。
+    <p class="disclaimer">
+      免责声明：本工具仅供学习交流与个人使用，请遵守所在学校及平台的相关规定。
+      使用本工具产生的一切后果（包括但不限于账号异常、记录无效、学校处分等）由使用者自行承担，开发者不承担任何责任。
     </p>
   </main>
 

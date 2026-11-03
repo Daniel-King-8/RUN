@@ -8,7 +8,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.services.mapdata import MAPS, get_map_data, list_maps  # noqa: E402
+from app.services.mapdata import (  # noqa: E402
+    MAPS,
+    get_map_data,
+    list_maps,
+    map_payload,
+)
 from app.session import SessionStore  # noqa: E402
 from utils.sign import get_sign  # noqa: E402
 from utils.track import gen_track_points  # noqa: E402
@@ -22,12 +27,44 @@ class MapTests(unittest.TestCase):
             self.assertTrue(data, f"{key} 地图为空")
             self.assertGreaterEqual(len(data), 2)
 
+    def test_map_graph_integrity(self):
+        for key in MAPS:
+            data = get_map_data(key)
+            ids = {item["id"] for item in data}
+            self.assertEqual(len(ids), len(data), f"{key} 存在重复 id")
+            for item in data:
+                for edge in item["edge"]:
+                    self.assertIn(edge, ids, f"{key} 的 edge {edge} 不存在")
+
     def test_track_generation(self):
         for key in MAPS:
             points = json.loads(gen_track_points(200, key))
             self.assertGreaterEqual(len(points), 2)
             for point in points:
                 self.assertEqual(len(point.split("-")), 4, point)
+
+
+class SchoolMatchTests(unittest.TestCase):
+    def test_scyz_by_school_id(self):
+        payload = map_payload({"schoolId": 2922, "schoolName": "四川邮电职业技术学院"})
+        self.assertTrue(payload["map_matched"])
+        self.assertEqual(payload["default_map"], "scyz_jk")
+        self.assertEqual([item["key"] for item in payload["maps"]], ["scyz_jk"])
+
+    def test_scyz_by_name_without_id(self):
+        payload = map_payload({"schoolName": "四川邮电职业技术学院"})
+        self.assertEqual(payload["default_map"], "scyz_jk")
+
+    def test_campus_filter(self):
+        payload = map_payload({"schoolName": "成都信息工程大学（龙泉校区）"})
+        self.assertTrue(payload["map_matched"])
+        self.assertEqual(payload["default_map"], "cuit_lqy")
+        self.assertEqual(len(payload["maps"]), 1)
+
+    def test_unknown_school_falls_back(self):
+        payload = map_payload({"schoolId": 123456, "schoolName": "某某大学"})
+        self.assertFalse(payload["map_matched"])
+        self.assertEqual(len(payload["maps"]), len(MAPS))
 
 
 class SignTests(unittest.TestCase):

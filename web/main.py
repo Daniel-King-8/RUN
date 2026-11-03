@@ -26,7 +26,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.auth import AuthError, login as upstream_login
-from app.services.mapdata import MAPS, list_maps
+from app.services.mapdata import MAPS, list_maps, map_payload
 from app.services.run import RunError, SessionExpired, submit_run
 from app.session import Session, SessionStore
 
@@ -111,6 +111,7 @@ class LoginRequest(BaseModel):
     phone: str = Field(min_length=1, max_length=32)
     password: str = Field(min_length=1, max_length=128)
     access_code: str | None = Field(default=None, max_length=128)
+    disclaimer_accepted: bool = False
 
 
 class RunRequest(BaseModel):
@@ -192,6 +193,9 @@ def api_config():
 def api_login(payload: LoginRequest, request: Request):
     _same_origin(request)
 
+    if not payload.disclaimer_accepted:
+        raise HTTPException(status_code=400, detail="请先阅读并同意免责声明")
+
     if not limiter.allow(_client_ip(request)):
         raise HTTPException(status_code=429, detail="尝试过于频繁，请稍后再试")
 
@@ -204,14 +208,20 @@ def api_login(payload: LoginRequest, request: Request):
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
     session = store.create(token, profile)
-    response = JSONResponse({"ok": True, "profile": _public_profile(profile)})
+    response = JSONResponse(
+        {"ok": True, "profile": _public_profile(profile), **map_payload(profile)}
+    )
     _set_session_cookie(response, session.sid)
     return response
 
 
 @app.get("/api/me")
 def api_me(session: Session = Depends(require_session)):
-    return {"ok": True, "profile": _public_profile(session.profile)}
+    return {
+        "ok": True,
+        "profile": _public_profile(session.profile),
+        **map_payload(session.profile),
+    }
 
 
 @app.post("/api/logout")
