@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RUN · 校园跑助手</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2322d3ee'/%3E%3Cpath d='M20 44l8-22h8l-8 22zm14 0l5-14h8l-5 14z' fill='%2307121f'/%3E%3C/svg%3E">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="mark" aria-hidden="true">
+        <span class="mark-dot"></span>
+        RUN
+      </div>
+      <div class="hero-text">
+        <h1>校园跑助手</h1>
+        <p>Docker 私有部署版 · 单次登录，用完即退</p>
+      </div>
+      <span id="statusPill" class="pill">未登录</span>
+    </header>
+
+    <div id="resultBanner" class="banner" hidden role="status" aria-live="polite"></div>
+
+    <section id="loginCard" class="card">
+      <h2>账号登录</h2>
+      <p class="card-sub">凭据仅用于本次登录，服务端不会保存。</p>
+
+      <form id="loginForm" novalidate>
+        <label class="field">
+          <span>手机号</span>
+          <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="32" required>
+        </label>
+
+        <label class="field">
+          <span>密码</span>
+          <input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+        </label>
+
+        <label class="field" id="accessCodeRow" hidden>
+          <span>访问口令</span>
+          <input id="accessCode" name="access_code" type="password" autocomplete="off" maxlength="128">
+        </label>
+
+        <p id="loginError" class="form-error" role="alert"></p>
+
+        <button id="loginBtn" class="primary" type="submit">登录</button>
+      </form>
+
+      <p class="footnote">
+        登录后 token 只保存在服务端内存中；提交完成、主动退出或空闲超时都会立即销毁。
+      </p>
+    </section>
+
+    <section id="appCard" class="card" hidden>
+      <div class="user-row">
+        <div class="avatar" id="avatar" aria-hidden="true">R</div>
+        <div class="user-meta">
+          <strong id="studentName">—</strong>
+          <span id="schoolName">—</span>
+        </div>
+        <button id="logoutBtn" class="ghost" type="button">退出登录</button>
+      </div>
+
+      <form id="runForm" novalidate>
+        <label class="field">
+          <span>地图</span>
+          <select id="mapSelect"></select>
+        </label>
+
+        <div class="grid2">
+          <label class="field">
+            <span>里程（米）</span>
+            <input id="distance" type="number" value="4999" min="1" max="5000" step="1" required>
+          </label>
+          <label class="field">
+            <span>时长（分钟）</span>
+            <input id="time" type="number" value="59" min="30" max="100" step="1" required>
+          </label>
+        </div>
+
+        <p id="paceHint" class="hint"></p>
+
+        <button id="runBtn" class="primary" type="submit">提交跑步记录</button>
+      </form>
+
+      <p class="footnote warn">
+        提交结束（无论成功或失败）后会自动退出登录并销毁本次 token；如需再次使用，请重新登录。
+      </p>
+    </section>
+
+    <p class="footer-note">
+      仅限可信的私有环境使用。请勿将本服务直接暴露到公网。
+    </p>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

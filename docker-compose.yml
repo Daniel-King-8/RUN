@@ -1,0 +1,25 @@
+services:
+  unirun:
+    build: .
+    image: unirun-web:local
+    container_name: unirun-web
+    init: true
+    restart: unless-stopped
+    # 默认只绑定本机回环地址。不要改成 0.0.0.0 后直接暴露到公网。
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      SESSION_IDLE_TTL: "900"
+      SESSION_MAX_TTL: "7200"
+      COOKIE_SECURE: "0"
+      ACCESS_CODE: ""
+      LOGIN_MAX_ATTEMPTS: "10"
+      LOGIN_WINDOW_SECONDS: "300"
+      UPSTREAM_TIMEOUT: "20"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
