@@ -13,8 +13,10 @@ services:
       SESSION_IDLE_TTL: "900"
       SESSION_MAX_TTL: "7200"
       COOKIE_SECURE: "0"
-      # 建议设置访问口令；留空表示局域网内任何人都能打开登录页
-      ACCESS_CODE: ""
+      # 建议放到 .env（已被 .gitignore 忽略），不要提交真实值
+      ACCESS_CODE: "${ACCESS_CODE:-}"
+      # 逗号/空格分隔的授权手机号；留空表示不启用白名单
+      ALLOWED_PHONES: "${ALLOWED_PHONES:-}"
       LOGIN_MAX_ATTEMPTS: "10"
       LOGIN_WINDOW_SECONDS: "300"
       UPSTREAM_TIMEOUT: "20"

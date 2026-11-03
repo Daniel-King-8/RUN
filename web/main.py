@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import logging
 import os
 import secrets
 import threading
@@ -25,6 +26,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from app.access import PhoneAllowlist
 from app.auth import AuthError, login as upstream_login
 from app.services.mapdata import MAPS, list_maps, map_payload
 from app.services.run import RunError, SessionExpired, submit_run
@@ -46,6 +48,7 @@ SESSION_IDLE_TTL = _int_env("SESSION_IDLE_TTL", 900)
 SESSION_MAX_TTL = _int_env("SESSION_MAX_TTL", 7200)
 SESSION_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "0") == "1"
 ACCESS_CODE = os.getenv("ACCESS_CODE", "")
+ALLOWED_PHONES = os.getenv("ALLOWED_PHONES", "")
 LOGIN_MAX_ATTEMPTS = _int_env("LOGIN_MAX_ATTEMPTS", 10)
 LOGIN_WINDOW_SECONDS = _int_env("LOGIN_WINDOW_SECONDS", 300)
 
@@ -74,6 +77,12 @@ class AttemptLimiter:
 
 
 limiter = AttemptLimiter(LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS)
+phone_allowlist = PhoneAllowlist(ALLOWED_PHONES)
+
+if not phone_allowlist.enabled:
+    logging.getLogger("uvicorn.error").warning(
+        "ALLOWED_PHONES 未设置：当前允许任意手机号登录"
+    )
 
 
 @asynccontextmanager
@@ -198,6 +207,9 @@ def api_login(payload: LoginRequest, request: Request):
 
     if not limiter.allow(_client_ip(request)):
         raise HTTPException(status_code=429, detail="尝试过于频繁，请稍后再试")
+
+    if not phone_allowlist.allows(payload.phone):
+        raise HTTPException(status_code=403, detail="该手机号未获授权使用本服务")
 
     if ACCESS_CODE and not secrets.compare_digest(payload.access_code or "", ACCESS_CODE):
         raise HTTPException(status_code=403, detail="访问口令不正确")

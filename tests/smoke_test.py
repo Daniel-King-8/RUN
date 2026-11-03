@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from app.access import PhoneAllowlist, normalize_phone  # noqa: E402
 from app.services.mapdata import (  # noqa: E402
     MAPS,
     get_map_data,
@@ -65,6 +66,24 @@ class SchoolMatchTests(unittest.TestCase):
         payload = map_payload({"schoolId": 123456, "schoolName": "某某大学"})
         self.assertFalse(payload["map_matched"])
         self.assertEqual(len(payload["maps"]), len(MAPS))
+
+
+class AllowlistTests(unittest.TestCase):
+    def test_normalize(self):
+        self.assertEqual(normalize_phone("+86 138-0000-0001"), "13800000001")
+        self.assertEqual(normalize_phone("13800000001"), "13800000001")
+
+    def test_empty_list_allows_all(self):
+        allowlist = PhoneAllowlist("")
+        self.assertFalse(allowlist.enabled)
+        self.assertTrue(allowlist.allows("13700000000"))
+
+    def test_whitelist(self):
+        allowlist = PhoneAllowlist("13800000001, 13900000002; +86 137-0000-0003")
+        self.assertTrue(allowlist.enabled)
+        self.assertTrue(allowlist.allows("13800000001"))
+        self.assertTrue(allowlist.allows("+86 138 0000 0001"))
+        self.assertFalse(allowlist.allows("13600000000"))
 
 
 class SignTests(unittest.TestCase):

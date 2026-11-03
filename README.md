@@ -3,6 +3,7 @@
 把原 [unirun](https://github.com/yanyaoli/unirun) 的 Tkinter 桌面工具改造成 **Docker 化的 Web 服务**：
 
 - 每次打开页面都会强制展示免责声明，确认后才能使用；
+- 支持手机号白名单，只有授权手机号能登录，其他账号在请求上游之前直接拒绝；
 - 每次使用都要单独登录；
 - 提交结束（成功或失败）自动退出登录并销毁本次 token；
 - 账号密码不落盘，token 只存在当前进程的内存会话里；
@@ -15,6 +16,7 @@
 
 | 项目 | 行为 |
 | --- | --- |
+| 手机号白名单 | 设置 `ALLOWED_PHONES` 后，未授权手机号在请求上游之前直接返回 403 |
 | 手机号 / 密码 | 仅在 `POST /api/login` 的生命周期内使用，转发给上游后不缓存、不写文件、不写日志 |
 | 上游 token | 只保存在服务端进程内存的 `Session` 对象中，浏览器拿到的只是一个随机 `HttpOnly` cookie |
 | 会话隔离 | 每个浏览器会话独立 Session、独立 token、独立提交锁 |
@@ -49,6 +51,8 @@
 ## 快速开始
 
 ```bash
+cp .env.example .env
+# 编辑 .env，至少填写 ALLOWED_PHONES（授权手机号）和 ACCESS_CODE
 docker compose up -d --build
 ```
 
@@ -60,7 +64,7 @@ docker compose up -d --build
 sudo ufw allow 8000/tcp
 ```
 
-建议在 `docker-compose.yml` 中设置 `ACCESS_CODE`，避免同网段的任何人都能直接使用。
+建议在 `.env` 中同时设置 `ACCESS_CODE` 和 `ALLOWED_PHONES`，避免同网段的任何人都能直接使用。
 
 停止并清除：
 
@@ -82,11 +86,33 @@ docker compose up -d --build
 | `SESSION_MAX_TTL` | `7200` | 会话最长存活秒数 |
 | `COOKIE_SECURE` | `0` | 走 HTTPS 时设为 `1` |
 | `ACCESS_CODE` | 空 | 非空时，登录页需要额外输入访问口令 |
+| `ALLOWED_PHONES` | 空 | 授权手机号，逗号/空格/分号分隔；空 = 不启用白名单 |
 | `LOGIN_MAX_ATTEMPTS` | `10` | 单 IP 在窗口期内的登录尝试上限 |
 | `LOGIN_WINDOW_SECONDS` | `300` | 登录限流窗口 |
 | `UPSTREAM_TIMEOUT` | `20` | 上游请求超时秒数 |
 | `APP_TIMEZONE` | `Asia/Shanghai` | 生成 `recordDate` 使用的时区；容器默认 UTC，必须显式设置 |
 | `UNIRUN_HOST` | 上游地址 | 一般不需要改 |
+
+### 手机号白名单
+
+`ALLOWED_PHONES` 非空时，只有列表里的手机号可以登录；其他手机号在请求上游之前就会被拒绝（HTTP 403），不会消耗上游的登录尝试。
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`：
+
+```dotenv
+ACCESS_CODE=你的访问口令
+ALLOWED_PHONES=13800000001,13800000002
+```
+
+- 支持逗号、空格、分号分隔；
+- 自动忽略 `+86`、空格、横线等格式差异；
+- 留空 = 不启用白名单，启动日志会打印警告；
+- `.env` 已被 `.gitignore` 和 `.dockerignore` 排除，真实号码不要写进 `docker-compose.yml`，也不要提交到仓库；
+- 修改后执行 `docker compose up -d` 生效，不需要 `--build`。
 
 ### 放到反向代理后面
 
