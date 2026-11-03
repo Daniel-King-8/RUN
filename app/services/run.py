@@ -7,6 +7,7 @@
 """
 import datetime
 import json
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -20,6 +21,7 @@ from app.config import (
     MOBILETYPE,
     REQUEST_TIMEOUT,
     SYSVERSION,
+    TIMEZONE,
     USERAGENT,
 )
 from utils.sign import get_sign
@@ -46,10 +48,15 @@ class SessionExpired(RunError):
     """上游 token 失效，需要重新登录。"""
 
 
+try:
+    _TZ = ZoneInfo(TIMEZONE)
+except Exception:  # 时区名无效时退回 UTC，避免整个服务起不来
+    _TZ = datetime.timezone.utc
+
+
 def _record_date() -> str:
-    return (datetime.datetime.now() - datetime.timedelta(minutes=30)).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    now = datetime.datetime.now(_TZ)
+    return (now - datetime.timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def average_pace(distance_m: int, time_min: int) -> float:

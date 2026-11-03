@@ -21,3 +21,6 @@ CONTENTTYPE = "application/json; charset=UTF-8"
 USERAGENT = "okhttp/3.12.0"
 
 REQUEST_TIMEOUT = float(os.getenv("UPSTREAM_TIMEOUT", "20"))
+
+# 上游按本地时间校验 recordDate；容器默认 UTC，必须显式指定。
+TIMEZONE = os.getenv("APP_TIMEZONE", "Asia/Shanghai")

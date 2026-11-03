@@ -60,6 +60,7 @@ docker compose up -d --build
 | `LOGIN_MAX_ATTEMPTS` | `10` | 单 IP 在窗口期内的登录尝试上限 |
 | `LOGIN_WINDOW_SECONDS` | `300` | 登录限流窗口 |
 | `UPSTREAM_TIMEOUT` | `20` | 上游请求超时秒数 |
+| `APP_TIMEZONE` | `Asia/Shanghai` | 生成 `recordDate` 使用的时区；容器默认 UTC，必须显式设置 |
 | `UNIRUN_HOST` | 上游地址 | 一般不需要改 |
 
 ### 放到反向代理后面

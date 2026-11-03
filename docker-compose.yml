@@ -16,6 +16,7 @@ services:
       LOGIN_MAX_ATTEMPTS: "10"
       LOGIN_WINDOW_SECONDS: "300"
       UPSTREAM_TIMEOUT: "20"
+      APP_TIMEZONE: "Asia/Shanghai"
     read_only: true
     tmpfs:
       - /tmp
